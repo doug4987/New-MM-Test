@@ -5,10 +5,7 @@ Main orchestrator that coordinates all components of the platform
 
 import asyncio
 import time
-import threading
-import schedule
-import random
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Callable, Awaitable
 from dataclasses import dataclass
 
 from loguru import logger
@@ -58,9 +55,9 @@ class MarketMakingPlatform:
         self.current_positions: Dict = {}
         self.pending_wagers: Dict = {}
         
-        # Threading
-        self.scheduler_thread: Optional[threading.Thread] = None
-        self.stop_event = asyncio.Event()
+        # Async task management
+        self.stop_event: Optional[asyncio.Event] = None
+        self._periodic_tasks: List[asyncio.Task] = []
         
         logger.info("Market Making Platform initialized")
     
@@ -84,14 +81,13 @@ class MarketMakingPlatform:
             
             # Start trading strategies
             await self._start_strategies()
-            
+
+            # Prepare async coordination primitives
+            self.stop_event = asyncio.Event()
+            self.is_running = True
+
             # Start scheduler
             self._start_scheduler()
-            
-            # Start async periodic tasks
-            asyncio.create_task(self._run_periodic_tasks())
-            
-            self.is_running = True
             logger.info("Market Making Platform started successfully")
             
         except Exception as e:
@@ -104,16 +100,16 @@ class MarketMakingPlatform:
         try:
             logger.info("Stopping Market Making Platform...")
             self.is_running = False
-            self.stop_event.set()
-            
+            if self.stop_event:
+                self.stop_event.set()
+
+            await self._cancel_periodic_tasks()
+            self.stop_event = None
+
             # Cancel all open wagers
             if self.prophet_api and not self.settings.trading.dry_run:
                 logger.info("Cancelling all open wagers...")
                 await self.prophet_api.cancel_all_wagers()
-            
-            # Stop scheduler
-            if self.scheduler_thread and self.scheduler_thread.is_alive():
-                self.scheduler_thread.join(timeout=5.0)
             
             # Disconnect from API
             if self.prophet_api:
@@ -266,61 +262,86 @@ class MarketMakingPlatform:
     
     def _start_scheduler(self):
         """Start the task scheduler"""
+        if not self.stop_event:
+            logger.warning("Cannot start scheduler without stop event")
+            return
+
         logger.info("Starting task scheduler...")
-        
-        # Schedule regular tasks
-        schedule.every(self.settings.strategy.quote_refresh_seconds).seconds.do(
-            self._schedule_quote_refresh
+
+        self._periodic_tasks.clear()
+
+        def schedule_task(name: str, interval: float, coro: Callable[[], Awaitable[Any]]):
+            self._periodic_tasks.append(
+                asyncio.create_task(
+                    self._periodic_runner(
+                        name=name,
+                        interval=interval,
+                        task_coro=coro
+                    )
+                )
+            )
+
+        if self.strategy:
+            schedule_task(
+                name="quote refresh",
+                interval=self.settings.strategy.quote_refresh_seconds,
+                coro=self.strategy.refresh_quotes
+            )
+            schedule_task(
+                name="position rebalance",
+                interval=300,
+                coro=self.strategy.rebalance_positions
+            )
+
+        schedule_task(
+            name="balance update",
+            interval=30,
+            coro=self._update_balance
         )
-        
-        schedule.every(30).seconds.do(
-            self._schedule_balance_check
+
+        schedule_task(
+            name="stats update",
+            interval=60,
+            coro=self._update_stats
         )
-        
-        schedule.every(60).seconds.do(
-            self._schedule_stats_update
-        )
-        
-        schedule.every(300).seconds.do(  # 5 minutes
-            self._schedule_position_rebalance
-        )
-        
-        # Note: Real-time market data comes from Prophet API WebSocket - no simulation needed
-        
-        # Start scheduler thread
-        self.scheduler_thread = threading.Thread(
-            target=self._run_scheduler,
-            daemon=True
-        )
-        self.scheduler_thread.start()
-        
-        logger.info("Task scheduler started")
-    
-    def _run_scheduler(self):
-        """Run the scheduler in a separate thread"""
-        while self.is_running:
-            schedule.run_pending()
-            time.sleep(1)
-    
-    def _schedule_quote_refresh(self):
-        """Scheduled task to refresh quotes"""
-        if self.is_running and self.strategy:
-            asyncio.create_task(self.strategy.refresh_quotes())
-    
-    def _schedule_balance_check(self):
-        """Scheduled task to check balance"""
-        if self.is_running and self.prophet_api:
-            asyncio.create_task(self._update_balance())
-    
-    def _schedule_stats_update(self):
-        """Scheduled task to update statistics"""
-        if self.is_running:
-            asyncio.create_task(self._update_stats())
-    
-    def _schedule_position_rebalance(self):
-        """Scheduled task to rebalance positions"""
-        if self.is_running and self.strategy:
-            asyncio.create_task(self.strategy.rebalance_positions())
+
+        logger.info("Task scheduler started with {} tasks", len(self._periodic_tasks))
+
+    async def _periodic_runner(
+        self,
+        name: str,
+        interval: float,
+        task_coro: Callable[[], Awaitable[Any]],
+    ):
+        """Run a coroutine at a fixed interval until stopped"""
+        if not self.stop_event:
+            return
+
+        stop_event = self.stop_event
+
+        try:
+            # Mimic schedule's behavior of waiting for the first interval
+            try:
+                await asyncio.wait_for(stop_event.wait(), timeout=interval)
+                return
+            except asyncio.TimeoutError:
+                pass
+
+            while self.is_running and not stop_event.is_set():
+                try:
+                    await task_coro()
+                except Exception as exc:  # noqa: BLE001 - log and continue
+                    logger.error(f"Error running periodic task '{name}': {exc}")
+
+                try:
+                    await asyncio.wait_for(stop_event.wait(), timeout=interval)
+                    break
+                except asyncio.TimeoutError:
+                    continue
+
+        except asyncio.CancelledError:
+            logger.debug(f"Periodic task '{name}' cancelled")
+            raise
     
     
     async def _update_balance(self):
@@ -476,30 +497,13 @@ class MarketMakingPlatform:
         
         logger.warning("EMERGENCY STOP COMPLETED")
     
-    async def _run_periodic_tasks(self):
-        """Run periodic tasks in the async event loop"""
-        logger.info("Starting periodic tasks for balance updates only")
-        
-        # Track last execution time
-        last_balance_update = 0
-        
-        while self.is_running:
-            try:
-                current_time = time.time()
-                
-                # Balance update every 30 seconds
-                if current_time - last_balance_update >= 30:
-                    if self.prophet_api:
-                        try:
-                            balance = await self.prophet_api.get_balance()
-                            self.stats.current_balance = balance.balance
-                        except:
-                            pass  # Ignore balance update errors
-                    last_balance_update = current_time
-                
-                # Sleep for 5 seconds before next iteration
-                await asyncio.sleep(5)
-                
-            except Exception as e:
-                logger.error(f"Error in periodic tasks: {e}")
-                await asyncio.sleep(5)
+    async def _cancel_periodic_tasks(self):
+        """Cancel all running periodic tasks"""
+        if not self._periodic_tasks:
+            return
+
+        for task in self._periodic_tasks:
+            task.cancel()
+
+        await asyncio.gather(*self._periodic_tasks, return_exceptions=True)
+        self._periodic_tasks.clear()
