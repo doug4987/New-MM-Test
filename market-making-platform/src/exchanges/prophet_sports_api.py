@@ -9,8 +9,7 @@ import time
 import uuid
 import base64
 import random
-import threading
-import schedule
+from contextlib import suppress
 from typing import Dict, List, Optional, Callable, Any, Union
 from dataclasses import dataclass, field
 from enum import Enum
@@ -128,6 +127,8 @@ class ProphetSportsAPI:
         
         # Event loop reference for WebSocket callbacks
         self.event_loop = None
+        self._token_refresh_task: Optional[asyncio.Task] = None
+        self._token_refresh_interval = 8 * 60  # seconds
         
         # Tournaments interested in
         self.tournaments_interested = ["MLB", "NBA", "NFL", "NHL"]  # Default sports
@@ -144,16 +145,17 @@ class ProphetSportsAPI:
         """Login to Prophet API and establish session"""
         try:
             # Store reference to current event loop for WebSocket callbacks
-            self.event_loop = asyncio.get_event_loop()
-            
+            self.event_loop = asyncio.get_running_loop()
+
             login_url = urljoin(self.base_url, self.urls['mm_login'])
             request_body = {
                 'access_key': self.access_key,
                 'secret_key': self.secret_key,
             }
-            
-            response = requests.post(
-                login_url, 
+
+            response = await self._async_request(
+                "POST",
+                login_url,
                 data=json.dumps(request_body),
                 headers={'Content-Type': 'application/json'}
             )
@@ -176,31 +178,55 @@ class ProphetSportsAPI:
             return False
     
     def _schedule_token_refresh(self):
-        """Schedule automatic token refresh every 8 minutes"""
-        schedule.every(8).minutes.do(self._refresh_token)
-    
-    def _refresh_token(self):
+        """Schedule automatic token refresh on the event loop"""
+        if self._token_refresh_task and not self._token_refresh_task.done():
+            return
+
+        loop = asyncio.get_running_loop()
+        self._token_refresh_task = loop.create_task(self._run_token_refresh())
+
+    async def _run_token_refresh(self):
+        """Background task that refreshes the token periodically"""
+        try:
+            while self.is_connected:
+                try:
+                    await asyncio.sleep(self._token_refresh_interval)
+                except asyncio.CancelledError:
+                    raise
+
+                if not self.is_connected:
+                    break
+
+                await self._refresh_token()
+        except asyncio.CancelledError:
+            logger.debug("Token refresh task cancelled")
+            raise
+
+    async def _refresh_token(self):
         """Refresh the access token"""
         try:
             refresh_url = urljoin(self.base_url, self.urls['mm_refresh'])
-            response = requests.post(
-                refresh_url, 
+            response = await self._async_request(
+                "POST",
+                refresh_url,
                 json={'refresh_token': self.mm_session['refresh_token']},
                 headers=self._get_auth_headers()
             )
-            
+
             if response.status_code == 200:
                 self.mm_session['access_token'] = response.json()['data']['access_token']
                 logger.info("Access token refreshed successfully")
-                
+
                 # Reconnect pusher with new token
                 if self.pusher:
                     self.pusher.disconnect()
                     self.pusher = None
-                    self._start_websocket_connection()
+                    await self._start_websocket_connection()
             else:
                 logger.error("Failed to refresh access token")
-                
+
+        except asyncio.CancelledError:
+            raise
         except Exception as e:
             logger.error(f"Error refreshing token: {e}")
     
@@ -219,7 +245,7 @@ class ProphetSportsAPI:
             logger.info(f"Initialized {len(self.my_tournaments)} tournaments with {len(self.sport_events)} events")
             
             # Start WebSocket connection after data is loaded
-            self._start_websocket_connection()
+            await self._start_websocket_connection()
             
         except Exception as e:
             logger.error(f"Error initializing data: {e}")
@@ -229,7 +255,11 @@ class ProphetSportsAPI:
         """Load valid odds ladder from API"""
         try:
             odds_url = urljoin(self.base_url, self.urls['mm_odds_ladder'])
-            response = requests.get(odds_url, headers=self._get_auth_headers())
+            response = await self._async_request(
+                "GET",
+                odds_url,
+                headers=self._get_auth_headers()
+            )
             
             if response.status_code == 200:
                 self.valid_odds = response.json()['data']
@@ -251,7 +281,11 @@ class ProphetSportsAPI:
         """Load available tournaments"""
         try:
             tournaments_url = urljoin(self.base_url, self.urls['mm_tournaments'])
-            response = requests.get(tournaments_url, headers=self._get_auth_headers())
+            response = await self._async_request(
+                "GET",
+                tournaments_url,
+                headers=self._get_auth_headers()
+            )
             
             if response.status_code == 200:
                 tournaments_data = response.json()['data']['tournaments']
@@ -278,8 +312,9 @@ class ProphetSportsAPI:
             
             for tournament_id, tournament in self.my_tournaments.items():
                 # Get events for this tournament
-                events_response = requests.get(
-                    events_url, 
+                events_response = await self._async_request(
+                    "GET",
+                    events_url,
                     params={'tournament_id': tournament_id},
                     headers=self._get_auth_headers()
                 )
@@ -291,7 +326,8 @@ class ProphetSportsAPI:
                     
                     # Get markets for all events in batch
                     event_ids = ','.join([str(event['event_id']) for event in events_data])
-                    markets_response = requests.get(
+                    markets_response = await self._async_request(
+                        "GET",
                         markets_url,
                         params={'event_ids': event_ids},
                         headers=self._get_auth_headers()
@@ -324,7 +360,11 @@ class ProphetSportsAPI:
         """Get account balance"""
         try:
             balance_url = urljoin(self.base_url, self.urls['mm_balance'])
-            response = requests.get(balance_url, headers=self._get_auth_headers())
+            response = await self._async_request(
+                "GET",
+                balance_url,
+                headers=self._get_auth_headers()
+            )
             
             if response.status_code == 200:
                 balance_data = response.json()['data']
@@ -350,8 +390,9 @@ class ProphetSportsAPI:
                 'stake': wager.stake
             }
             
-            response = requests.post(
-                place_url, 
+            response = await self._async_request(
+                "POST",
+                place_url,
                 json=wager_data,
                 headers=self._get_auth_headers()
             )
@@ -385,7 +426,8 @@ class ProphetSportsAPI:
                 }
                 wagers_data.append(wager_data)
             
-            response = requests.post(
+            response = await self._async_request(
+                "POST",
                 batch_url,
                 json={"data": wagers_data},
                 headers=self._get_auth_headers()
@@ -427,7 +469,8 @@ class ProphetSportsAPI:
                 'wager_id': wager_id
             }
             
-            response = requests.post(
+            response = await self._async_request(
+                "POST",
                 cancel_url,
                 json=cancel_data,
                 headers=self._get_auth_headers()
@@ -455,7 +498,8 @@ class ProphetSportsAPI:
         try:
             cancel_all_url = urljoin(self.base_url, self.urls['mm_cancel_all_wagers'])
             
-            response = requests.post(
+            response = await self._async_request(
+                "POST",
                 cancel_all_url,
                 json={},
                 headers=self._get_auth_headers()
@@ -476,11 +520,11 @@ class ProphetSportsAPI:
             logger.error(f"Error cancelling all wagers: {e}")
             return False
     
-    def _start_websocket_connection(self):
+    async def _start_websocket_connection(self):
         """Start WebSocket connection using Pusher"""
         try:
             # Get connection configuration
-            config_response = self._get_connection_config()
+            config_response = await self._get_connection_config()
             if not config_response:
                 logger.error("Failed to get WebSocket configuration")
                 return
@@ -514,18 +558,22 @@ class ProphetSportsAPI:
         except Exception as e:
             logger.error(f"Error starting WebSocket connection: {e}")
     
-    def _get_connection_config(self) -> Optional[dict]:
+    async def _get_connection_config(self) -> Optional[dict]:
         """Get WebSocket connection configuration"""
         try:
             config_url = urljoin(self.base_url, self.urls['websocket_config'])
-            response = requests.get(config_url, headers=self._get_auth_headers())
-            
+            response = await self._async_request(
+                "GET",
+                config_url,
+                headers=self._get_auth_headers()
+            )
+
             if response.status_code == 200:
                 return response.json()
             else:
                 logger.error(f"Failed to get connection config: {response.status_code}")
                 return None
-                
+
         except Exception as e:
             logger.error(f"Error getting connection config: {e}")
             return None
@@ -747,18 +795,29 @@ class ProphetSportsAPI:
         """Get authentication headers for API requests"""
         if not self.mm_session.get('access_token'):
             return {}
-            
+
         return {
             'Authorization': f'Bearer {self.mm_session["access_token"]}',
             'Content-Type': 'application/json'
         }
+
+    async def _async_request(self, method: str, url: str, **kwargs) -> requests.Response:
+        """Execute an HTTP request in a background thread"""
+        kwargs.setdefault('timeout', 10)
+        return await asyncio.to_thread(requests.request, method, url, **kwargs)
     
     async def disconnect(self):
         """Disconnect from Prophet API"""
+        if self._token_refresh_task:
+            self._token_refresh_task.cancel()
+            with suppress(asyncio.CancelledError):
+                await self._token_refresh_task
+            self._token_refresh_task = None
+
         if self.pusher:
             self.pusher.disconnect()
             self.pusher = None
-        
+
         self.is_connected = False
         logger.info("Disconnected from Prophet Sports API")
     
