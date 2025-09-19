@@ -1,0 +1,6 @@
+{
+    "_comment": "Updated Market Maker API credentials for active access.",
+    "access_key": "26d9080c3bd3e94055333a8b92aa575a",
+    "secret_key": "3db9de19aeec602d8bce29ccd85de2a0",
+    "tournaments": ["MLB"]
+}

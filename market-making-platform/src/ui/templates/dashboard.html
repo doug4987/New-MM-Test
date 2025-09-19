@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Market Making Platform - Live Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background-color: #0d1117;
+            color: #e6edf3;
+            line-height: 1.4;
+        }
+        
+        .header {
+            background-color: #161b22;
+            padding: 1rem;
+            border-bottom: 2px solid #30363d;
+            display: flex;
+            justify-content: between;
+            align-items: center;
+        }
+        
+        .header h1 {
+            color: #58a6ff;
+            font-size: 1.8rem;
+        }
+        
+        .status {
+            display: flex;
+            gap: 2rem;
+            font-size: 0.9rem;
+        }
+        
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #f85149;
+        }
+        
+        .status-dot.connected {
+            background-color: #3fb950;
+        }
+        
+        .main-container {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            height: calc(100vh - 80px);
+        }
+        
+        .sidebar {
+            background-color: #0d1117;
+            border-right: 1px solid #30363d;
+            padding: 1rem;
+            overflow-y: auto;
+        }
+        
+        .order-books-container {
+            padding: 1rem;
+            overflow-y: auto;
+        }
+        
+        .section {
+            margin-bottom: 2rem;
+        }
+        
+        .section h2 {
+            color: #f0f6fc;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+            border-bottom: 1px solid #30363d;
+            padding-bottom: 0.5rem;
+        }
+        
+        .event-item {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 0.8rem;
+            margin-bottom: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .event-item:hover {
+            border-color: #58a6ff;
+            background-color: #0c2d48;
+        }
+        
+        .event-item.selected {
+            border-color: #58a6ff;
+            background-color: #0c2d48;
+        }
+        
+        .event-name {
+            font-weight: bold;
+            color: #58a6ff;
+            margin-bottom: 0.3rem;
+        }
+        
+        .event-meta {
+            font-size: 0.8rem;
+            color: #8b949e;
+        }
+        
+        .order-book {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            overflow: hidden;
+        }
+        
+        .order-book-header {
+            background-color: #21262d;
+            padding: 0.8rem;
+            border-bottom: 1px solid #30363d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .order-book-title {
+            color: #f0f6fc;
+            font-weight: bold;
+        }
+        
+        .spread-info {
+            font-size: 0.8rem;
+            color: #8b949e;
+        }
+        
+        .order-book-content {
+            padding: 1rem;
+        }
+        
+        .market-depth-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+        }
+        
+        .order-side {
+            padding: 1rem;
+        }
+        
+        .order-side.bids {
+            border-right: 1px solid #30363d;
+        }
+        
+        .side-header {
+            font-weight: bold;
+            margin-bottom: 0.8rem;
+            padding-bottom: 0.4rem;
+            border-bottom: 1px solid #30363d;
+        }
+        
+        .side-header.bids {
+            color: #3fb950;
+        }
+        
+        .side-header.asks {
+            color: #f85149;
+        }
+        
+        .order-level {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 0.5rem;
+            padding: 0.3rem 0;
+            border-bottom: 1px solid #21262d;
+            font-size: 0.85rem;
+        }
+        
+        .order-level:hover {
+            background-color: #0c2d48;
+        }
+        
+        .level-odds {
+            font-weight: bold;
+        }
+        
+        .level-odds.bid {
+            color: #3fb950;
+        }
+        
+        .level-odds.ask {
+            color: #f85149;
+        }
+        
+        .level-size {
+            color: #8b949e;
+        }
+        
+        .level-price {
+            color: #e6edf3;
+            font-size: 0.8rem;
+        }
+        
+        .level-odds.main-level {
+            background-color: #21262d;
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            border: 1px solid #30363d;
+        }
+        
+        .level-odds.bid.main-level {
+            border-color: #3fb950;
+        }
+        
+        .level-odds.ask.main-level {
+            border-color: #f85149;
+        }
+        
+        .stats-panel {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #58a6ff;
+        }
+        
+        .stat-label {
+            font-size: 0.8rem;
+            color: #8b949e;
+            margin-top: 0.3rem;
+        }
+        
+        .connection-status {
+            position: fixed;
+            bottom: 1rem;
+            right: 1rem;
+            background-color: #21262d;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+        }
+        
+        .no-data {
+            text-align: center;
+            color: #8b949e;
+            padding: 2rem;
+            font-style: italic;
+        }
+        
+        .loading {
+            text-align: center;
+            color: #58a6ff;
+            padding: 2rem;
+        }
+        
+        .loading::after {
+            content: "...";
+            animation: dots 1s steps(5, end) infinite;
+        }
+        
+        @keyframes dots {
+            0%, 20% { content: "."; }
+            40% { content: ".."; }
+            60% { content: "..."; }
+            80%, 100% { content: "...."; }
+        }
+        
+        .last-update {
+            font-size: 0.7rem;
+            color: #6e7681;
+            margin-top: 0.3rem;
+        }
+        
+        /* Line Selection Controls */
+        .line-selector {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.8rem;
+            flex-wrap: wrap;
+        }
+        
+        .line-button {
+            background-color: #21262d;
+            border: 1px solid #30363d;
+            color: #8b949e;
+            padding: 0.4rem 0.8rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+        
+        .line-button:hover {
+            border-color: #58a6ff;
+            color: #e6edf3;
+        }
+        
+        .line-button.active {
+            background-color: #0c2d48;
+            border-color: #58a6ff;
+            color: #58a6ff;
+            font-weight: bold;
+        }
+        
+        .line-label {
+            font-size: 0.7rem;
+            color: #6e7681;
+            margin-bottom: 0.3rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏆 Market Making Platform</h1>
+        <div class="status">
+            <div class="status-item">
+                <div class="status-dot" id="api-status"></div>
+                <span>API</span>
+            </div>
+            <div class="status-item">
+                <div class="status-dot" id="ws-status"></div>
+                <span>WebSocket</span>
+            </div>
+            <div class="status-item">
+                <span id="balance">$0.00</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="main-container">
+        <div class="sidebar">
+            <div class="section">
+                <h2>📊 Platform Stats</h2>
+                <div class="stats-panel">
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-value" id="active-wagers">0</div>
+                            <div class="stat-label">Active Wagers</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="total-exposure">$0</div>
+                            <div class="stat-label">Total Exposure</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="order-books-count">0</div>
+                            <div class="stat-label">Order Books</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="events-count">0</div>
+                            <div class="stat-label">Events</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>🏅 Active Events</h2>
+                <div id="events-list">
+                    <div class="loading">Loading events</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="order-books-container">
+            <div class="section">
+                <h2>📈 Live Order Books</h2>
+                <div id="order-books-list">
+                    <div class="loading">Connecting to live data</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="connection-status" id="connection-status">
+        Connecting to server...
+    </div>
+
+    <script>
+        class DashboardApp {
+            constructor() {
+                this.ws = null;
+                this.orderBooks = new Map();
+                this.selectedEvent = null;
+                this.platformStats = {};
+                
+                this.init();
+            }
+            
+            init() {
+                this.connectWebSocket();
+                this.setupEventListeners();
+                this.fetchInitialData();
+            }
+            
+            connectWebSocket() {
+                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const wsUrl = `${protocol}//${window.location.host}/ws`;
+                
+                try {
+                    this.ws = new WebSocket(wsUrl);
+                    
+                    this.ws.onopen = () => {
+                        console.log('WebSocket connected');
+                        this.updateConnectionStatus('Connected', true);
+                        document.getElementById('ws-status').classList.add('connected');
+                    };
+                    
+                    this.ws.onmessage = (event) => {
+                        try {
+                            const message = JSON.parse(event.data);
+                            this.handleWebSocketMessage(message);
+                        } catch (e) {
+                            console.error('Error parsing WebSocket message:', e);
+                        }
+                    };
+                    
+                    this.ws.onclose = () => {
+                        console.log('WebSocket disconnected');
+                        this.updateConnectionStatus('Disconnected', false);
+                        document.getElementById('ws-status').classList.remove('connected');
+                        
+                        // Reconnect after 3 seconds
+                        setTimeout(() => this.connectWebSocket(), 3000);
+                    };
+                    
+                    this.ws.onerror = (error) => {
+                        console.error('WebSocket error:', error);
+                        this.updateConnectionStatus('Error', false);
+                    };
+                    
+                } catch (e) {
+                    console.error('Error connecting WebSocket:', e);
+                    this.updateConnectionStatus('Failed to connect', false);
+                }
+            }
+            
+            handleWebSocketMessage(message) {
+                switch (message.type) {
+                    case 'platform_status':
+                        this.updatePlatformStatus(message.data);
+                        break;
+                        
+                    case 'order_books_snapshot':
+                        this.updateOrderBooksSnapshot(message.data);
+                        break;
+                        
+                    case 'order_book_update':
+                        this.updateOrderBook(message.data);
+                        this.showLiveUpdate('order_book', message.data.market_id);
+                        break;
+                        
+                    case 'selection_update':
+                        this.handleSelectionUpdate(message.data);
+                        this.showLiveUpdate('selection', `Event ${message.data.event_id}`);
+                        break;
+                        
+                    case 'trade_update':
+                        this.handleTradeUpdate(message.data);
+                        this.showLiveUpdate('trade', `${message.data.trade.stake}@${message.data.trade.odds}`);
+                        break;
+                        
+                    case 'market_line_update':
+                        this.handleMarketLineUpdate(message.data);
+                        this.showLiveUpdate('line', `Line ${message.data.line}`);
+                        break;
+                        
+                    case 'market_data_update':
+                        console.log('Market data update:', message.data);
+                        break;
+                        
+                    default:
+                        console.log('Unknown message type:', message.type);
+                }
+            }
+            
+            async fetchInitialData() {
+                try {
+                    // Fetch events
+                    const eventsResponse = await fetch('/api/events');
+                    const events = await eventsResponse.json();
+                    this.updateEventsList(events);
+                    
+                    // Fetch platform status
+                    const statusResponse = await fetch('/api/platform/status');
+                    const status = await statusResponse.json();
+                    this.updatePlatformStatus(status);
+                    
+                    // Fetch statistics
+                    const statsResponse = await fetch('/api/statistics');
+                    const stats = await statsResponse.json();
+                    this.updateStatistics(stats);
+                    
+                    document.getElementById('api-status').classList.add('connected');
+                    
+                } catch (e) {
+                    console.error('Error fetching initial data:', e);
+                }
+            }
+            
+            updatePlatformStatus(status) {
+                document.getElementById('balance').textContent = `$${status.current_balance?.toFixed(2) || '0.00'}`;
+                
+                if (status.api_connected) {
+                    document.getElementById('api-status').classList.add('connected');
+                } else {
+                    document.getElementById('api-status').classList.remove('connected');
+                }
+                
+                this.platformStats = status;
+            }
+            
+            updateStatistics(stats) {
+                const platform = stats.platform || {};
+                const wagerManager = stats.wager_manager || {};
+                
+                document.getElementById('active-wagers').textContent = wagerManager.active_wagers || 0;
+                document.getElementById('total-exposure').textContent = `$${(wagerManager.total_exposure || 0).toFixed(2)}`;
+                document.getElementById('order-books-count').textContent = (stats.market_data?.order_books || 0);
+                document.getElementById('events-count').textContent = platform.active_events || 0;
+            }
+            
+            updateEventsList(events) {
+                const container = document.getElementById('events-list');
+                
+                if (!events || events.length === 0) {
+                    container.innerHTML = '<div class="no-data">No events available</div>';
+                    return;
+                }
+                
+                container.innerHTML = events.map(event => `
+                    <div class="event-item" data-event-id="${event.event_id}">
+                        <div class="event-name">${event.name}</div>
+                        <div class="event-meta">
+                            Markets: ${event.markets_count} | ID: ${event.event_id}
+                        </div>
+                    </div>
+                `).join('');
+                
+                // Add click listeners
+                container.querySelectorAll('.event-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        const eventId = parseInt(item.dataset.eventId);
+                        this.selectEvent(eventId);
+                    });
+                });
+            }
+            
+            selectEvent(eventId) {
+                // Update selected event styling
+                document.querySelectorAll('.event-item').forEach(item => {
+                    item.classList.remove('selected');
+                });
+                document.querySelector(`[data-event-id="${eventId}"]`)?.classList.add('selected');
+                
+                this.selectedEvent = eventId;
+                this.filterOrderBooksByEvent(eventId);
+            }
+            
+            filterOrderBooksByEvent(eventId) {
+                const filteredBooks = Array.from(this.orderBooks.values())
+                    .filter(book => book.event_id === eventId);
+                this.renderOrderBooks(filteredBooks);
+            }
+            
+            updateOrderBooksSnapshot(orderBooks) {
+                this.orderBooks.clear();
+                orderBooks.forEach(book => {
+                    this.orderBooks.set(book.market_id, book);
+                });
+                
+                if (this.selectedEvent) {
+                    this.filterOrderBooksByEvent(this.selectedEvent);
+                } else {
+                    this.renderOrderBooks(Array.from(this.orderBooks.values()));
+                }
+            }
+            
+            updateOrderBook(orderBook) {
+                this.orderBooks.set(orderBook.market_id, orderBook);
+                
+                // Re-render if this order book is currently visible
+                if (!this.selectedEvent || orderBook.event_id === this.selectedEvent) {
+                    if (this.selectedEvent) {
+                        this.filterOrderBooksByEvent(this.selectedEvent);
+                    } else {
+                        this.renderOrderBooks(Array.from(this.orderBooks.values()));
+                    }
+                }
+            }
+            
+            renderOrderBooks(orderBooks) {
+                const container = document.getElementById('order-books-list');
+                
+                if (!orderBooks || orderBooks.length === 0) {
+                    container.innerHTML = '<div class="no-data">No order books available</div>';
+                    return;
+                }
+                
+                container.innerHTML = orderBooks.map(book => this.renderOrderBook(book)).join('');
+                
+                // Add event listeners for line selection buttons
+                this.attachLineSelectionListeners();
+            }
+            
+            attachLineSelectionListeners() {
+                document.querySelectorAll('.line-button').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        
+                        const selectedLine = button.dataset.line;
+                        const marketId = button.closest('.line-selector').dataset.marketId;
+                        
+                        // Update active button styling
+                        button.parentElement.querySelectorAll('.line-button').forEach(btn => {
+                            btn.classList.remove('active');
+                        });
+                        button.classList.add('active');
+                        
+                        // Re-render market depth for selected line
+                        this.switchToLine(marketId, selectedLine);
+                    });
+                });
+            }
+            
+            switchToLine(marketId, selectedLine) {
+                const orderBook = this.orderBooks.get(marketId);
+                if (!orderBook) return;
+                
+                // Find the market depth container for this order book
+                const orderBookElement = document.querySelector(`[data-market-id="${marketId}"]`);
+                const depthContainer = orderBookElement?.querySelector('.market-depth-container');
+                
+                if (depthContainer) {
+                    depthContainer.innerHTML = this.renderMarketDepthForBook(orderBook, selectedLine);
+                }
+            }
+            
+            renderOrderBook(book) {
+                const lastUpdate = new Date(book.last_update * 1000).toLocaleTimeString();
+                const hasMultipleLines = book.has_multiple_lines && book.line_groups && Object.keys(book.line_groups).length > 1;
+                
+                // For markets with multiple lines, show line selector
+                let lineSelectorHtml = '';
+                let selectedLine = null;
+                
+                if (hasMultipleLines) {
+                    selectedLine = book.available_lines[0]; // Default to first line
+                    lineSelectorHtml = `
+                        <div class="line-label">Available Lines:</div>
+                        <div class="line-selector" data-market-id="${book.market_id}">
+                            ${book.available_lines.map(line => `
+                                <button class="line-button ${line === selectedLine ? 'active' : ''}" data-line="${line}">
+                                    ${this.formatLineLabel(line, book.market_type)}
+                                </button>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+                
+                return `
+                    <div class="order-book" data-market-id="${book.market_id}">
+                        <div class="order-book-header">
+                            <div>
+                                <div class="order-book-title">${book.event_name} - ${book.market_type}</div>
+                                <div class="last-update">Last update: ${lastUpdate}</div>
+                            </div>
+                            <div class="spread-info">
+                                Spread: ${book.spread} | Volume: $${book.total_volume?.toFixed(0) || 0}
+                            </div>
+                        </div>
+                        
+                        <div class="order-book-content">
+                            ${lineSelectorHtml}
+                            <div class="market-depth-container">
+                                ${this.renderMarketDepthForBook(book, selectedLine)}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            formatLineLabel(line, marketType) {
+                if (marketType.toLowerCase().includes('spread')) {
+                    const lineValue = parseFloat(line);
+                    return lineValue > 0 ? `+${line}` : line;
+                } else if (marketType.toLowerCase().includes('total')) {
+                    return `O/U ${line}`;
+                } else {
+                    return line;
+                }
+            }
+            
+            renderMarketDepthForBook(book, selectedLine) {
+                const hasMultipleLines = book.has_multiple_lines && book.line_groups && Object.keys(book.line_groups).length > 1;
+                
+                if (hasMultipleLines && selectedLine && book.line_groups[selectedLine]) {
+                    // Render specific line selections
+                    return this.renderLineSelections(book.line_groups[selectedLine], book.market_type);
+                } else {
+                    // Fallback to regular selections rendering
+                    return this.renderMarketDepth(book.selections || []);
+                }
+            }
+            
+            renderLineSelections(lineSelections, marketType) {
+                const selectionNames = Object.keys(lineSelections);
+                
+                if (selectionNames.length === 0) {
+                    return '<div class="no-data" style="padding: 2rem; font-size: 0.8rem;">No selections available for this line</div>';
+                }
+                
+                // For spread/total markets, typically split into two sides
+                if (selectionNames.length === 2) {
+                    const [leftSelectionName, rightSelectionName] = selectionNames;
+                    const leftSelections = lineSelections[leftSelectionName] || [];
+                    const rightSelections = lineSelections[rightSelectionName] || [];
+                    
+                    return `
+                        <div style="display: grid; grid-template-columns: 1fr 1fr;">
+                            <div class="order-side bids">
+                                <div class="side-header bids">${leftSelectionName}</div>
+                                ${this.renderSideDepth(leftSelections, 'bid')}
+                            </div>
+                            <div class="order-side asks">
+                                <div class="side-header asks">${rightSelectionName}</div>
+                                ${this.renderSideDepth(rightSelections, 'ask')}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // For other markets, show all selections in a list
+                    let allSelections = [];
+                    selectionNames.forEach(name => {
+                        allSelections = allSelections.concat(lineSelections[name] || []);
+                    });
+                    return `
+                        <div style="padding: 1rem;">
+                            ${this.renderSideDepth(allSelections, 'bid')}
+                        </div>
+                    `;
+                }
+            }
+            
+            renderMarketDepth(selections) {
+                if (!selections || selections.length === 0) {
+                    return '<div class="no-data" style="grid-column: 1 / -1; padding: 2rem; font-size: 0.8rem;">No selections available</div>';
+                }
+                
+                // Split selections into sides (typically 2 for most markets)
+                const selectionArray = Array.isArray(selections) ? selections : Object.values(selections);
+                const leftSide = selectionArray.slice(0, Math.ceil(selectionArray.length / 2));
+                const rightSide = selectionArray.slice(Math.ceil(selectionArray.length / 2));
+                
+                return `
+                    <div class="order-side bids">
+                        <div class="side-header bids">${leftSide[0]?.selection_name || 'Side A'}</div>
+                        ${this.renderSideDepth(leftSide, 'bid')}
+                    </div>
+                    <div class="order-side asks">
+                        <div class="side-header asks">${rightSide[0]?.selection_name || 'Side B'}</div>
+                        ${this.renderSideDepth(rightSide, 'ask')}
+                    </div>
+                `;
+            }
+            
+            renderSideDepth(selections, sideType) {
+                if (!selections || selections.length === 0) {
+                    return '<div class="no-data" style="padding: 1rem; font-size: 0.8rem;">No offers available</div>';
+                }
+                
+                // For sports betting, each selection has one fixed odds value
+                // Don't create fake depth levels like traditional order books
+                return selections.map((selection, index) => `
+                    <div class="order-level">
+                        <div class="level-odds ${sideType} main-level">
+                            ${selection.odds === 'request' ? 'request' : (selection.odds > 0 ? '+' : '') + selection.odds}
+                        </div>
+                        <div class="level-size">
+                            $${(selection.size || 0).toFixed(0)}
+                        </div>
+                        <div class="level-price">
+                            Avail
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            renderSelections(selections) {
+                if (!selections || selections.length === 0) {
+                    return '<div class="no-data" style="padding: 1rem; font-size: 0.8rem;">No selections available</div>';
+                }
+                
+                return selections.map(selection => `
+                    <div class="order-level">
+                        <div class="level-odds" style="color: #58a6ff; font-weight: bold;">${selection.selection_name}</div>
+                        <div class="level-odds bid">${selection.odds > 0 ? '+' : ''}${selection.odds}</div>
+                        <div class="level-size">$${selection.size?.toFixed(0) || 0}</div>
+                    </div>
+                `).join('');
+            }
+            
+            updateConnectionStatus(status, isConnected) {
+                const statusEl = document.getElementById('connection-status');
+                statusEl.textContent = status;
+                statusEl.style.borderColor = isConnected ? '#3fb950' : '#f85149';
+            }
+            
+            handleSelectionUpdate(data) {
+                console.log('📈 Selection Update:', data);
+                // Trigger a re-fetch of order books for this event to get latest data
+                if (data.event_id && (!this.selectedEvent || data.event_id === this.selectedEvent)) {
+                    this.refreshOrderBooksForEvent(data.event_id);
+                }
+            }
+            
+            handleTradeUpdate(data) {
+                console.log('💰 Trade Update:', data);
+                // Show trade flash animation or update trade history
+                this.showTradeFlash(data.trade);
+                // Refresh order books as liquidity may have changed
+                if (data.event_id && (!this.selectedEvent || data.event_id === this.selectedEvent)) {
+                    this.refreshOrderBooksForEvent(data.event_id);
+                }
+            }
+            
+            handleMarketLineUpdate(data) {
+                console.log('📊 Market Line Update:', data);
+                // Refresh order books to show new lines
+                if (data.event_id && (!this.selectedEvent || data.event_id === this.selectedEvent)) {
+                    this.refreshOrderBooksForEvent(data.event_id);
+                }
+            }
+            
+            async refreshOrderBooksForEvent(eventId) {
+                try {
+                    const response = await fetch(`/api/events/${eventId}/order-books`);
+                    const orderBooks = await response.json();
+                    
+                    // Update our order books cache
+                    orderBooks.forEach(book => {
+                        this.orderBooks.set(book.market_id, book);
+                    });
+                    
+                    // Re-render if this event is currently selected
+                    if (!this.selectedEvent || eventId === this.selectedEvent) {
+                        if (this.selectedEvent) {
+                            this.filterOrderBooksByEvent(this.selectedEvent);
+                        } else {
+                            this.renderOrderBooks(Array.from(this.orderBooks.values()));
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error refreshing order books:', e);
+                }
+            }
+            
+            showLiveUpdate(type, details) {
+                // Show a brief notification about the live update
+                const statusEl = document.getElementById('connection-status');
+                const originalText = statusEl.textContent;
+                
+                statusEl.textContent = `🔄 Live ${type}: ${details}`;
+                statusEl.style.backgroundColor = '#0c2d48';
+                
+                setTimeout(() => {
+                    statusEl.textContent = originalText;
+                    statusEl.style.backgroundColor = '#21262d';
+                }, 2000);
+            }
+            
+            showTradeFlash(trade) {
+                // Create a brief flash notification for trades
+                const flash = document.createElement('div');
+                flash.style.cssText = `
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background-color: #0c2d48;
+                    color: #58a6ff;
+                    padding: 1rem 2rem;
+                    border-radius: 6px;
+                    border: 1px solid #58a6ff;
+                    z-index: 1000;
+                    font-weight: bold;
+                    animation: flashIn 0.5s ease-in-out;
+                `;
+                flash.textContent = `💰 Trade: $${trade.stake} @ ${trade.odds > 0 ? '+' : ''}${trade.odds}`;
+                
+                document.body.appendChild(flash);
+                
+                setTimeout(() => {
+                    flash.remove();
+                }, 2000);
+            }
+            
+            setupEventListeners() {
+                // Refresh data every 30 seconds
+                setInterval(() => {
+                    if (this.ws?.readyState === WebSocket.OPEN) {
+                        this.fetchInitialData();
+                    }
+                }, 30000);
+                
+                // Add CSS for flash animation
+                if (!document.getElementById('flash-animation-styles')) {
+                    const styles = document.createElement('style');
+                    styles.id = 'flash-animation-styles';
+                    styles.textContent = `
+                        @keyframes flashIn {
+                            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+                            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+                            100% { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
+                        }
+                        .live-update-flash {
+                            animation: flashIn 0.3s ease-in-out;
+                        }
+                    `;
+                    document.head.appendChild(styles);
+                }
+            }
+        }
+        
+        // Initialize the dashboard when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new DashboardApp();
+        });
+    </script>
+</body>
+</html>

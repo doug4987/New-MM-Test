@@ -1,0 +1,104 @@
+2025-09-17 16:23:44.439 | INFO     | src.config.settings:load_config:147 - Configuration loaded from config/default.yaml
+2025-09-17 16:23:44.439 | INFO     | src.config.settings:load_credentials:178 - Loaded Prophet API credentials from user_info.json
+🏆 Market Making Platform with Live Dashboard
+==================================================
+📊 Dashboard URL: http://127.0.0.1:8000
+🔧 Configuration: config/default.yaml
+🧪 Dry Run Mode: True
+📈 Tournaments: MLB
+==================================================
+
+[32m2025-09-17 16:23:44[0m | [1mINFO    [0m | [36mlogger[0m:[36m47[0m | [1mLogger initialized with level: INFO[0m
+[32m2025-09-17 16:23:44[0m | [1mINFO    [0m | [36mlogger[0m:[36m48[0m | [1mLog file: logs/market_maker.log[0m
+[32m2025-09-17 16:23:44[0m | [1mINFO    [0m | [36mrun_with_dashboard[0m:[36m41[0m | [1m🚀 Starting Market Making Platform with Dashboard[0m
+[32m2025-09-17 16:23:44[0m | [1mINFO    [0m | [36mplatform[0m:[36m65[0m | [1mMarket Making Platform initialized[0m
+[32m2025-09-17 16:23:44[0m | [1mINFO    [0m | [36mdashboard_server[0m:[36m44[0m | [1mDashboard server initialized on 127.0.0.1:8000[0m
+[32m2025-09-17 16:23:44[0m | [1mINFO    [0m | [36mrun_with_dashboard[0m:[36m54[0m | [1mStarting trading platform...[0m
+[32m2025-09-17 16:23:44[0m | [1mINFO    [0m | [36mplatform[0m:[36m70[0m | [1mStarting Market Making Platform...[0m
+[32m2025-09-17 16:23:44[0m | [1mINFO    [0m | [36msettings[0m:[36m320[0m | [1mConfiguration validation passed[0m
+[32m2025-09-17 16:23:44[0m | [1mINFO    [0m | [36mplatform[0m:[36m133[0m | [1mInitializing platform components...[0m
+[32m2025-09-17 16:23:44[0m | [1mINFO    [0m | [36mmarket_data_manager[0m:[36m82[0m | [1mMarket Data Manager initialized with order book support[0m
+[32m2025-09-17 16:23:44[0m | [1mINFO    [0m | [36mwager_manager[0m:[36m48[0m | [1mWager Manager initialized[0m
+[32m2025-09-17 16:23:44[0m | [1mINFO    [0m | [36mrisk_manager[0m:[36m29[0m | [1mRisk Manager initialized[0m
+[32m2025-09-17 16:23:44[0m | [1mINFO    [0m | [36msimple_market_maker[0m:[36m33[0m | [1mSimple Market Maker strategy initialized[0m
+[32m2025-09-17 16:23:44[0m | [1mINFO    [0m | [36mplatform[0m:[36m168[0m | [1mPlatform components initialized[0m
+[32m2025-09-17 16:23:44[0m | [1mINFO    [0m | [36mplatform[0m:[36m172[0m | [1mConnecting to Prophet API...[0m
+[32m2025-09-17 16:23:44[0m | [1mINFO    [0m | [36mprophet_sports_api[0m:[36m160[0m | [1mSuccessfully logged into Prophet API[0m
+[32m2025-09-17 16:23:44[0m | [1mINFO    [0m | [36mprophet_sports_api[0m:[36m505[0m | [1mWebSocket connection initiated[0m
+[32m2025-09-17 16:23:44[0m | [1mINFO    [0m | [36mplatform[0m:[36m183[0m | [1mConnected to Prophet API successfully[0m
+[32m2025-09-17 16:23:44[0m | [1mINFO    [0m | [36mplatform[0m:[36m235[0m | [1mLoading market data...[0m
+[32m2025-09-17 16:23:44[0m | [1mINFO    [0m | [36mprophet_sports_api[0m:[36m230[0m | [1mLoaded 555 valid odds levels[0m
+[32m2025-09-17 16:23:45[0m | [1mINFO    [0m | [36mprophet_sports_api[0m:[36m579[0m | [1mSuccessfully got channels: 2 channels[0m
+[32m2025-09-17 16:23:45[0m | [1mINFO    [0m | [36mprophet_sports_api[0m:[36m262[0m | [1mLoaded 1 relevant tournaments[0m
+[32m2025-09-17 16:23:45[0m | [1mINFO    [0m | [36mprophet_sports_api[0m:[36m554[0m | [1mSubscribed to private channel event: wagers[0m
+[32m2025-09-17 16:23:45[0m | [1mINFO    [0m | [36mprophet_sports_api[0m:[36m554[0m | [1mSubscribed to private channel event: health_check[0m
+[32m2025-09-17 16:23:45[0m | [1mINFO    [0m | [36mprophet_sports_api[0m:[36m312[0m | [1mLoaded events for tournament MLB[0m
+[32m2025-09-17 16:23:45[0m | [1mINFO    [0m | [36mprophet_sports_api[0m:[36m216[0m | [1mInitialized 1 tournaments with 19 events[0m
+[32m2025-09-17 16:23:45[0m | [1mINFO    [0m | [36mmarket_data_manager[0m:[36m413[0m | [1mInitializing order books for all events...[0m
+[32m2025-09-17 16:23:45[0m | [1mINFO    [0m | [36mmarket_data_manager[0m:[36m443[0m | [1mInitialized 2968 order books for 19 events[0m
+[32m2025-09-17 16:23:45[0m | [1mINFO    [0m | [36mplatform[0m:[36m251[0m | [1mLoaded 1 tournaments with 19 events[0m
+[32m2025-09-17 16:23:45[0m | [1mINFO    [0m | [36mplatform[0m:[36m252[0m | [1mInitialized 2968 order books[0m
+[32m2025-09-17 16:23:45[0m | [1mINFO    [0m | [36mplatform[0m:[36m253[0m | [1mCurrent balance: $99637.95[0m
+[32m2025-09-17 16:23:45[0m | [1mINFO    [0m | [36mplatform[0m:[36m257[0m | [1mStarting trading strategies...[0m
+[32m2025-09-17 16:23:45[0m | [33m[1mWARNING [0m | [36mplatform[0m:[36m260[0m | [33m[1mRunning in DRY RUN mode - no real wagers will be placed[0m
+[32m2025-09-17 16:23:45[0m | [1mINFO    [0m | [36msimple_market_maker[0m:[36m38[0m | [1mSimple Market Maker strategy started[0m
+[32m2025-09-17 16:23:45[0m | [1mINFO    [0m | [36mplatform[0m:[36m265[0m | [1mTrading strategies started[0m
+[32m2025-09-17 16:23:45[0m | [1mINFO    [0m | [36mplatform[0m:[36m269[0m | [1mStarting task scheduler...[0m
+[32m2025-09-17 16:23:45[0m | [1mINFO    [0m | [36mplatform[0m:[36m300[0m | [1mTask scheduler started[0m
+[32m2025-09-17 16:23:45[0m | [1mINFO    [0m | [36mplatform[0m:[36m95[0m | [1mMarket Making Platform started successfully[0m
+[32m2025-09-17 16:23:45[0m | [1mINFO    [0m | [36mplatform[0m:[36m549[0m | [1mStarting periodic tasks for real-time simulation[0m
+[32m2025-09-17 16:23:47[0m | [1mINFO    [0m | [36mrun_with_dashboard[0m:[36m61[0m | [1mStarting dashboard server on http://127.0.0.1:8000[0m
+INFO:     Started server process [66692]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     127.0.0.1:62514 - "WebSocket /ws" [accepted]
+INFO:     connection open
+[32m2025-09-17 16:23:47[0m | [1mINFO    [0m | [36mdashboard_server[0m:[36m162[0m | [1mWebSocket connected. Total connections: 1[0m
+INFO:     127.0.0.1:62515 - "GET / HTTP/1.1" 200 OK
+[32m2025-09-17 16:23:55[0m | [1mINFO    [0m | [36mdashboard_server[0m:[36m168[0m | [1mWebSocket disconnected. Total connections: 0[0m
+INFO:     connection closed
+INFO:     127.0.0.1:62515 - "GET /api/events HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62523 - "WebSocket /ws" [accepted]
+INFO:     connection open
+[32m2025-09-17 16:23:55[0m | [1mINFO    [0m | [36mdashboard_server[0m:[36m162[0m | [1mWebSocket connected. Total connections: 1[0m
+INFO:     127.0.0.1:62515 - "GET /api/platform/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62515 - "GET /api/statistics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62524 - "GET /api/order-books?limit=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62533 - "GET /api/events HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62533 - "GET /api/platform/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62533 - "GET /api/statistics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62542 - "GET /api/events HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62542 - "GET /api/platform/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62542 - "GET /api/statistics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62564 - "GET /api/events HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62564 - "GET /api/platform/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62564 - "GET /api/statistics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62589 - "GET /api/events HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62589 - "GET /api/platform/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62589 - "GET /api/statistics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62602 - "GET /api/events HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62602 - "GET /api/platform/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62602 - "GET /api/statistics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62611 - "GET /api/events HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62611 - "GET /api/platform/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62611 - "GET /api/statistics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62629 - "GET /api/order-books?limit=6 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62637 - "GET /api/events HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62637 - "GET /api/platform/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62637 - "GET /api/statistics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62671 - "GET /api/events HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62671 - "GET /api/platform/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62671 - "GET /api/statistics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62687 - "GET /api/events HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62687 - "GET /api/platform/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62687 - "GET /api/statistics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62713 - "GET /api/events HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62713 - "GET /api/platform/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62713 - "GET /api/statistics HTTP/1.1" 200 OK
+INFO:     Shutting down
+[32m2025-09-17 16:31:08[0m | [1mINFO    [0m | [36mdashboard_server[0m:[36m168[0m | [1mWebSocket disconnected. Total connections: 0[0m
+INFO:     connection closed
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [66692]

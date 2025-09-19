@@ -1,0 +1,17 @@
+2025-09-17 16:42:29 | INFO     | logger:47 | Logger initialized with level: INFO
+2025-09-17 16:42:29 | INFO     | logger:48 | Log file: logs/test.log
+2025-09-17 16:42:29 | INFO     | settings:147 | Configuration loaded from config/default.yaml
+2025-09-17 16:42:29 | INFO     | settings:178 | Loaded Prophet API credentials from user_info.json
+2025-09-17 16:42:30 | INFO     | prophet_sports_api:160 | Successfully logged into Prophet API
+2025-09-17 16:42:30 | INFO     | prophet_sports_api:505 | WebSocket connection initiated
+2025-09-17 16:42:30 | INFO     | prophet_sports_api:579 | Successfully got channels: 2 channels
+2025-09-17 16:42:30 | INFO     | prophet_sports_api:230 | Loaded 555 valid odds levels
+2025-09-17 16:42:30 | INFO     | prophet_sports_api:554 | Subscribed to private channel event: wagers
+2025-09-17 16:42:30 | INFO     | prophet_sports_api:554 | Subscribed to private channel event: health_check
+2025-09-17 16:42:30 | INFO     | prophet_sports_api:262 | Loaded 4 relevant tournaments
+2025-09-17 16:42:31 | INFO     | prophet_sports_api:312 | Loaded events for tournament NFL
+2025-09-17 16:42:31 | INFO     | prophet_sports_api:312 | Loaded events for tournament NBA
+2025-09-17 16:42:32 | INFO     | prophet_sports_api:312 | Loaded events for tournament MLB
+2025-09-17 16:42:32 | INFO     | prophet_sports_api:312 | Loaded events for tournament NHL
+2025-09-17 16:42:32 | INFO     | prophet_sports_api:216 | Initialized 4 tournaments with 19 events
+2025-09-17 16:42:32 | INFO     | prophet_sports_api:726 | Disconnected from Prophet Sports API
